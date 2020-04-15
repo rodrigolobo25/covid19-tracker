@@ -21,9 +21,6 @@ recognition.onresult = function (event) {
   var last = event.results.length - 1;
   if (event.results[last].isFinal) {
     var command = event.results[last][0].transcript;
-    fetch("http://localhost:5000/covidAPI?message={command}")
-      .then((res) => res.json())
-      .then((res) => this.setState({ apiResponse: res }));
   }
   console.log(state.apiResponse);
 };
