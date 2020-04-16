@@ -41,22 +41,51 @@ router.get("/", async function (req, res, next) {
     dialogresult.world = true;
   }
   valuesTemp = temp.parameters.fields.location.listValue.values;
+  var countyCheck = false;
+  var diff = 0;
   valuesLength = valuesTemp.length;
   var tempArray = new Array(valuesLength)
     .fill(null)
     .map(() => ({ county: "", country: "", state: "" }));
   for (var i = 0; i < valuesLength; i++) {
     if (valuesTemp[i].structValue.fields["subadmin-area"].stringValue != "") {
-      tempArray[i].county =
+      tempArray[i - diff].county =
         valuesTemp[i].structValue.fields["subadmin-area"].stringValue;
-    } else if (valuesTemp[i].structValue.fields.country.stringValue != "") {
-      tempArray[i].country =
-        valuesTemp[i].structValue.fields.country.stringValue;
+      if (valuesTemp[i].structValue.fields["admin-area"].stringValue != "") {
+        tempArray[i - diff].state =
+          valuesTemp[i].structValue.fields["admin-area"].stringValue;
+      } else {
+        countyCheck = true;
+      }
     } else if (
       valuesTemp[i].structValue.fields["admin-area"].stringValue != ""
     ) {
-      tempArray[i].state =
-        valuesTemp[i].structValue.fields["admin-area"].stringValue;
+      if (!countyCheck) {
+        tempArray[i - diff].state =
+          valuesTemp[i].structValue.fields["admin-area"].stringValue;
+      } else {
+        var x = i - 1;
+        while (
+          x >= 0 &&
+          valuesTemp[x].structValue.fields["subadmin-area"].stringValue != ""
+        ) {
+          if (
+            valuesTemp[x].structValue.fields["admin-area"].stringValue == ""
+          ) {
+            tempArray[x - diff].state =
+              valuesTemp[i].structValue.fields["admin-area"].stringValue;
+            x--;
+          } else {
+            break;
+          }
+        }
+        countyCheck = false;
+        tempArray.pop();
+        diff++;
+      }
+    } else if (valuesTemp[i].structValue.fields.country.stringValue != "") {
+      tempArray[i].country =
+        valuesTemp[i].structValue.fields.country.stringValue;
     }
   }
   dialogresult.location = tempArray;

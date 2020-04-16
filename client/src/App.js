@@ -17,12 +17,13 @@ import "./App.css";
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { dialogresult: [], isLoading: false };
+    this.state = { dialogresult: [], isLoading: true };
   }
 
   componentDidMount() {
     this.setState({ isLoading: true });
-    var command = "how many people have died in Venezuela?";
+    var command =
+      "What are the latest stats for Alachua County and Orange County in Florida?";
     fetch(`http://localhost:5000/covidAPI?message=${command}`)
       .then((res) => res.json())
       .then((res) => this.setState({ dialogresult: res, isLoading: false }));
@@ -33,14 +34,15 @@ class App extends React.Component {
 
     if (isLoading) {
       return <div>Loading....</div>;
+    } else {
+      console.log(dialogresult);
+      return (
+        <div>
+          <div>The response was: </div>
+          <div>{dialogresult.location[0].country}</div>
+        </div>
+      );
     }
-
-    return (
-      <div>
-        <div>The response was: </div>
-        <div>{dialogresult}</div>
-      </div>
-    );
   }
 }
 
