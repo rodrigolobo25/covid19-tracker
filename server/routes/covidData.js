@@ -8,11 +8,59 @@ const projectId = "covid19-fxfuyx";
 const sessionId = uuid.v4();
 const languageCode = "en";
 const sessionPath = sessionClient.sessionPath(projectId, sessionId);
+var dialogresult = {
+  intent: false,
+  world: false,
+  death: false,
+  recovery: false,
+  cases: false,
+  location: [],
+};
 
 router.get("/", async function (req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   var query = req.query.message;
-  var dialogresult = await executeQueries(query, languageCode);
+  var temp = await executeQueries(query, languageCode);
+
+  //populating the dialogresult
+  if (temp.intent.displayName == "0 - getData") {
+    dialogresult.intent = true;
+  }
+  var valuesTemp = temp.parameters.fields.data.listValue.values;
+  var valuesLength = valuesTemp.length;
+  for (var i = 0; i < valuesLength; i++) {
+    if (valuesTemp[i].stringValue == "cases") {
+      dialogresult.cases = true;
+    } else if (valuesTemp[i].stringValue == "recover") {
+      dialogresult.recovery = true;
+    } else if (valuesTemp[i].stringValue == "death") {
+      dialogresult.death = true;
+    }
+  }
+  if (temp.parameters.fields.world.stringValue != "") {
+    dialogresult.world = true;
+  }
+  valuesTemp = temp.parameters.fields.location.listValue.values;
+  valuesLength = valuesTemp.length;
+  var tempArray = new Array(valuesLength)
+    .fill(null)
+    .map(() => ({ county: "", country: "", state: "" }));
+  for (var i = 0; i < valuesLength; i++) {
+    if (valuesTemp[i].structValue.fields["subadmin-area"].stringValue != "") {
+      tempArray[i].county =
+        valuesTemp[i].structValue.fields["subadmin-area"].stringValue;
+    } else if (valuesTemp[i].structValue.fields.country.stringValue != "") {
+      tempArray[i].country =
+        valuesTemp[i].structValue.fields.country.stringValue;
+    } else if (
+      valuesTemp[i].structValue.fields["admin-area"].stringValue != ""
+    ) {
+      tempArray[i].state =
+        valuesTemp[i].structValue.fields["admin-area"].stringValue;
+    }
+  }
+  dialogresult.location = tempArray;
+
   res.send(dialogresult);
 });
 

@@ -17,7 +17,7 @@ import "./App.css";
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { apiResponse: [], isLoading: false };
+    this.state = { dialogresult: [], isLoading: false };
   }
 
   componentDidMount() {
@@ -25,11 +25,11 @@ class App extends React.Component {
     var command = "how many people have died in Venezuela?";
     fetch(`http://localhost:5000/covidAPI?message=${command}`)
       .then((res) => res.json())
-      .then((res) => this.setState({ apiResponse: res, isLoading: false }));
+      .then((res) => this.setState({ dialogresult: res, isLoading: false }));
   }
 
   render() {
-    var { apiResponse, isLoading } = this.state;
+    var { dialogresult, isLoading } = this.state;
 
     if (isLoading) {
       return <div>Loading....</div>;
@@ -38,7 +38,7 @@ class App extends React.Component {
     return (
       <div>
         <div>The response was: </div>
-        <div>{apiResponse.parameters.fields.world.kind}</div>
+        <div>{dialogresult}</div>
       </div>
     );
   }
