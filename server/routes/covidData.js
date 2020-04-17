@@ -111,7 +111,7 @@ router.get("/", async function (req, res, next) {
   var covidresult = [];
 
   if (!dialogresult.intent) {
-    res.send(covidresult);
+    res.send(["No"]);
   } else {
     var covidresult = await covidAPI(dialogresult);
     res.send(covidresult);
