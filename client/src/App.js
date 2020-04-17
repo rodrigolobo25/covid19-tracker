@@ -1,12 +1,6 @@
 import React from "react";
 import "./App.css";
-import {
-  Header,
-  Container,
-  Segment,
-  StatisticGroup,
-  Statistic,
-} from "semantic-ui-react";
+import { Header, Container, Segment, Statistic, Icon } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 //const audioControl = require("./AudioControl.js");
 
@@ -18,7 +12,7 @@ class App extends React.Component {
 
   componentDidMount() {
     this.setState({ isLoading: true });
-    var command = "how many deaths in Venezuela and Colombia";
+    var command = "how many people have died Venezuela and Colombia";
     fetch(`http://localhost:5000/covidAPI?message=${command}`)
       .then((res) => res.json())
       .then((res) => this.setState({ dialogresult: res, isLoading: false }));
@@ -26,6 +20,7 @@ class App extends React.Component {
 
   render() {
     var { dialogresult, isLoading } = this.state;
+    const colors = { Confirmed: "red", Recovered: "green", Deaths: "black" };
 
     if (isLoading) {
       return <div>Loading....</div>;
@@ -63,14 +58,22 @@ class App extends React.Component {
             Coronavirus Data Tracker
           </Header>
           <Segment attached>
-            {dialogresult.map(({ location, data }) => {
+            {dialogresult.map(({ location, data }, i) => {
               return (
-                <Segment>
-                  <Header as="h2">{location}</Header>
-                  <Statistic.Group>
-                    {data.map((value) => {
+                <Segment key={i} aligned="center">
+                  <Header floated="left" icon as="h2">
+                    <Icon name="map marker alternate" />
+                    <Header.Content>{location}</Header.Content>
+                  </Header>
+                  <Statistic.Group widths="three">
+                    {data.map((value, x) => {
+                      console.log(colors[Object.keys(value)[0]]);
                       return (
-                        <Statistic>
+                        <Statistic
+                          style={{ marginBottom: "40px", marginTop: "15px" }}
+                          key={x}
+                          color={colors[Object.keys(value)[0]]}
+                        >
                           <Statistic.Value>
                             {value[Object.keys(value)[0]]}
                           </Statistic.Value>
