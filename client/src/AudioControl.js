@@ -1,6 +1,6 @@
-var state;
-function AudioControl(s) {
-  state = s;
+var state = "";
+export function AudioControl() {
+  return state;
 }
 
 var recognition = new window.webkitSpeechRecognition();
@@ -10,17 +10,9 @@ recognition.maxAlternatives = 1;
 recognition.continuous = true;
 recognition.start();
 
-var speechRequest = {
-  location: "",
-  deaths: "",
-  cases: "",
-  recovered: "",
-};
-
 recognition.onresult = function (event) {
   var last = event.results.length - 1;
   if (event.results[last].isFinal) {
-    var command = event.results[last][0].transcript;
+    state = event.results[last][0].transcript;
   }
-  console.log(state.apiResponse);
 };

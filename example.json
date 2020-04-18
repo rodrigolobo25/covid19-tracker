@@ -1,0 +1,63 @@
+{
+  "fulfillmentMessages": [
+    {
+      "platform": "PLATFORM_UNSPECIFIED",
+      "text": { "text": ["Solving for Venezuela, Colombia and Brazil death"] },
+      "message": "text"
+    }
+  ],
+  "outputContexts": [],
+  "queryText": "how many deaths in Venezuela in Colombia and in Brazil??",
+  "speechRecognitionConfidence": 0,
+  "action": "",
+  "parameters": {
+    "fields": {
+      "location": { "listValue": { "values": [] }, "kind": "listValue" },
+      "data": {
+        "listValue": {
+          "values": [{ "stringValue": "death", "kind": "stringValue" }]
+        },
+        "kind": "listValue"
+      },
+      "country": {
+        "listValue": {
+          "values": [
+            { "stringValue": "Venezuela", "kind": "stringValue" },
+            { "stringValue": "Colombia", "kind": "stringValue" },
+            { "stringValue": "Brazil", "kind": "stringValue" }
+          ]
+        },
+        "kind": "listValue"
+      },
+      "world": { "stringValue": "", "kind": "stringValue" }
+    }
+  },
+  "allRequiredParamsPresent": true,
+  "fulfillmentText": "Solving for Venezuela, Colombia and Brazil death",
+  "webhookSource": "",
+  "webhookPayload": null,
+  "intent": {
+    "inputContextNames": [],
+    "events": [],
+    "trainingPhrases": [],
+    "outputContexts": [],
+    "parameters": [],
+    "messages": [],
+    "defaultResponsePlatforms": [],
+    "followupIntentInfo": [],
+    "name": "projects/covid19-fxfuyx/agent/intents/19f55e98-4f5d-4236-bb21-9b311d6be371",
+    "displayName": "0 - getData",
+    "priority": 0,
+    "isFallback": false,
+    "webhookState": "WEBHOOK_STATE_UNSPECIFIED",
+    "action": "",
+    "resetContexts": false,
+    "rootFollowupIntentName": "",
+    "parentFollowupIntentName": "",
+    "mlDisabled": false
+  },
+  "intentDetectionConfidence": 0.6624811291694641,
+  "diagnosticInfo": null,
+  "languageCode": "en",
+  "sentimentAnalysisResult": null
+}

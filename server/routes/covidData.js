@@ -43,14 +43,25 @@ router.get("/", async function (req, res, next) {
       dialogresult.world = true;
     }
     valuesTemp = temp.parameters.fields.location.listValue.values;
-    var countyCheck = false;
-    var diff = 0;
+    var countryTemp = temp.parameters.fields.country.listValue.values;
     valuesLength = valuesTemp.length;
-    var tempArray = new Array(valuesLength)
+    var countryLength = countryTemp.length;
+    var tempArray = new Array(valuesLength + countryLength)
       .fill(null)
       .map(() => ({ county: "", country: "", state: "" }));
+    var countyCheck = false;
+    var diff = 0;
     for (var i = 0; i < valuesLength; i++) {
       if (valuesTemp[i].structValue.fields["subadmin-area"].stringValue != "") {
+        if (
+          valuesTemp[i].structValue.fields.country.stringValue != "" &&
+          valuesTemp[i].structValue.fields.country.stringValue !=
+            "United States"
+        ) {
+          tempArray[i - diff].country =
+            valuesTemp[i].structValue.fields.country.stringValue;
+          continue;
+        }
         tempArray[i - diff].county =
           valuesTemp[i].structValue.fields["subadmin-area"].stringValue;
         if (tempArray[i - diff].county == "Manhattan") {
@@ -83,7 +94,6 @@ router.get("/", async function (req, res, next) {
             x >= 0 &&
             valuesTemp[x].structValue.fields["subadmin-area"].stringValue != ""
           ) {
-            console.log(x);
             if (
               valuesTemp[x].structValue.fields["admin-area"].stringValue == ""
             ) {
@@ -99,22 +109,32 @@ router.get("/", async function (req, res, next) {
           diff++;
         }
       } else if (valuesTemp[i].structValue.fields.country.stringValue != "") {
-        tempArray[i].country =
+        tempArray[i - diff].country =
           valuesTemp[i].structValue.fields.country.stringValue;
-        if (tempArray[i].country == "Puerto Rico") {
+        if (tempArray[i - diff].country == "Puerto Rico") {
           tempArray[i].state = "Puerto Rico";
         }
       }
     }
+    var offset = 0;
+    countryTemp.forEach(function (country) {
+      tempArray[valuesLength - diff + offset].country = country.stringValue;
+      offset++;
+    });
     dialogresult.location = tempArray;
   }
   var covidresult = [];
+  var search = true;
 
   if (!dialogresult.intent) {
     res.send(["No"]);
   } else {
-    var covidresult = await covidAPI(dialogresult);
-    res.send(covidresult);
+    var { covidresult, search } = await covidAPI(dialogresult);
+    if (search.value) {
+      res.send(covidresult);
+    } else {
+      res.send(["No"]);
+    }
   }
 });
 
@@ -150,20 +170,25 @@ async function executeQueries(query, languageCode) {
   }
 }
 
-function getData(body, covidresult, dialogresult, index) {
-  if (dialogresult.cases) {
-    covidresult[index].data.push({ Confirmed: body.latest.confirmed });
-  }
-  if (dialogresult.recovery) {
-    covidresult[index].data.push({ Recovered: body.latest.recovered });
-  }
-  if (dialogresult.death) {
-    covidresult[index].data.push({ Deaths: body.latest.deaths });
-  }
-  if (!dialogresult.death && !dialogresult.cases && !dialogresult.recovery) {
-    covidresult[index].data.push({ Confirmed: body.latest.confirmed });
-    covidresult[index].data.push({ Recovered: body.latest.recovered });
-    covidresult[index].data.push({ Deaths: body.latest.deaths });
+function getData(body, covidresult, dialogresult, index, search) {
+  if (body.detail != null) {
+    console.log("Covid API did not find request");
+  } else {
+    search.value = true;
+    if (dialogresult.cases) {
+      covidresult[index].data.push({ Confirmed: body.latest.confirmed });
+    }
+    if (dialogresult.recovery) {
+      covidresult[index].data.push({ Recovered: body.latest.recovered });
+    }
+    if (dialogresult.death) {
+      covidresult[index].data.push({ Deaths: body.latest.deaths });
+    }
+    if (!dialogresult.death && !dialogresult.cases && !dialogresult.recovery) {
+      covidresult[index].data.push({ Confirmed: body.latest.confirmed });
+      covidresult[index].data.push({ Recovered: body.latest.recovered });
+      covidresult[index].data.push({ Deaths: body.latest.deaths });
+    }
   }
 }
 
@@ -175,7 +200,8 @@ function makeRequest(
   covidresult,
   dialogresult,
   index,
-  resolve
+  resolve,
+  search
 ) {
   if (nyt == "" && country == "" && county == "" && state == "") {
     request(
@@ -184,11 +210,8 @@ function makeRequest(
       function (err, res, body) {
         if (err) {
           return console.log(err);
-        }
-        if (body.detail != null) {
-          console.log("Query not Found in Covid API");
         } else {
-          getData(body, covidresult, dialogresult, index);
+          getData(body, covidresult, dialogresult, index, search);
           resolve(body);
         }
       }
@@ -204,11 +227,8 @@ function makeRequest(
       function (err, res, body) {
         if (err) {
           return console.log(err);
-        }
-        if (body.detail != null) {
-          console.log("Query not Found in Covid API");
         } else {
-          getData(body, covidresult, dialogresult, index);
+          getData(body, covidresult, dialogresult, index, search);
           resolve(body);
         }
       }
@@ -217,12 +237,13 @@ function makeRequest(
 }
 
 async function covidAPI(dialogresult) {
+  var search = { value: false };
   var promises = [];
   if (dialogresult.world) {
     var covidresult = new Array(dialogresult.location.length + 1)
       .fill(null)
       .map(() => ({ location: "", data: [] }));
-    covidresult[dialogresult.location.length].location = "world";
+    covidresult[dialogresult.location.length].location = "World";
     promises.push(
       new Promise((resolve, reject) =>
         makeRequest(
@@ -233,7 +254,8 @@ async function covidAPI(dialogresult) {
           covidresult,
           dialogresult,
           dialogresult.location.length,
-          resolve
+          resolve,
+          search
         )
       )
     );
@@ -270,7 +292,7 @@ async function covidAPI(dialogresult) {
       country = "&country=" + dialogresult.location[i].country;
     }
     console.log(
-      "https://coronavirus-tracker-api.ruizlab.org/v2/locations" +
+      "https://coronavirus-tracker-api.ruizlab.org/v2/locations?" +
         nyt +
         country +
         county +
@@ -286,12 +308,13 @@ async function covidAPI(dialogresult) {
           covidresult,
           dialogresult,
           index,
-          resolve
+          resolve,
+          search
         )
       )
     );
     index++;
   }
   const array = await Promise.all(promises);
-  return covidresult;
+  return { covidresult, search };
 }
