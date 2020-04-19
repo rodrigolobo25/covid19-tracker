@@ -5,7 +5,7 @@ var router = express.Router();
 const request = require("request");
 
 const sessionClient = new dialogflow.SessionsClient({
-  keyFilename: process.cwd() + "../../covid19-fxfuyx-3a87cb72ad17.json",
+  keyFilename: process.cwd() + "../../covid19-fxfuyx-75560ab382c4.json",
 });
 const projectId = "covid19-fxfuyx";
 const sessionId = uuid.v4();
