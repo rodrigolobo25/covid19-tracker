@@ -1,5 +1,16 @@
 var state = "";
+var voice;
+var synthesis;
 export function AudioControl() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.onvoiceschanged = function () {
+      var langRegex = /^en(-[a-z]{2})?$/i;
+      synthesis = window.speechSynthesis;
+      voice = synthesis
+        .getVoices()
+        .filter((voice) => langRegex.test(voice.lang))[0];
+    };
+  }
   return state;
 }
 
@@ -16,3 +27,13 @@ recognition.onresult = function (event) {
     state = event.results[last][0].transcript;
   }
 };
+
+export function speakMessage(message) {
+  const utterance = new SpeechSynthesisUtterance();
+  utterance.voice = voice;
+  utterance.text = message;
+  utterance.pitch = 7;
+  utterance.rate = 1.2;
+  utterance.volume = 0.6;
+  synthesis.speak(utterance);
+}

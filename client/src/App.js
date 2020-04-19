@@ -8,45 +8,74 @@ import {
   Statistic,
   Icon,
   Image,
+  Button,
 } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
-
-const audioControl = require("./AudioControl.js");
 var change = "";
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { dialogresult: ["No"], isLoading: false };
+    this.state = {
+      dialogresult: ["No"],
+      isLoading: false,
+      message: "Welcome to Coronavirus Data Tracker!",
+      start: true,
+    };
   }
 
   componentDidMount() {
-    this.interval = setInterval(() => this.loadData(), 1000);
+    this.interval = setInterval(() => this.loadData(), 500);
   }
 
   componentWillUnmount() {
     clearInterval(this.interval);
   }
 
+  getStarted = () => this.setState({ start: false });
+
   async loadData() {
-    var command = audioControl.AudioControl();
-    console.log(command);
-    if (change !== command) {
-      this.setState((state) => ({
-        isLoading: !state.isLoading,
-      }));
-      change = command;
-      fetch(`http://localhost:5000/covidAPI?message=${command}`)
-        .then((res) => res.json())
-        .then((res) => this.setState({ dialogresult: res, isLoading: false }));
+    if (!this.state.start) {
+      const audioControl = require("./AudioControl.js");
+      var command = audioControl.AudioControl();
+      if (!this.state.start && change !== command) {
+        this.setState((state) => ({
+          isLoading: !state.isLoading,
+        }));
+        change = command;
+        console.log(command);
+        fetch(`http://localhost:5000/covidAPI?message=${command}`)
+          .then((res) => res.json())
+          .then((res) => {
+            audioControl.speakMessage(res.message.value);
+            this.setState({
+              dialogresult: res.covidresult,
+              isLoading: false,
+              message: res.message.value,
+            });
+          });
+      }
     }
   }
 
   render() {
-    var { dialogresult, isLoading } = this.state;
+    var { dialogresult, isLoading, message, start } = this.state;
     const colors = { Confirmed: "red", Recovered: "green", Deaths: "black" };
 
-    if (isLoading) {
+    if (start) {
+      return (
+        <Segment attached>
+          <Header as="h3" align="center" style={{ margin: "40px" }}>
+            Welcome to Coronavirus Data Tracker created by Rodrigo Lobo! This
+            application shows real time data about the current Coronavirus
+            crisis, feel free to talk to the agent. I hope you like it!
+          </Header>
+          <Button size="huge" positive onClick={this.getStarted}>
+            Let's get started!
+          </Button>
+        </Segment>
+      );
+    } else if (isLoading) {
       return (
         <Segment>
           <Dimmer active inverted>
@@ -61,9 +90,8 @@ class App extends React.Component {
     } else if (dialogresult[0] === "No") {
       return (
         <Segment attached>
-          <Header as="h4" align="center">
-            Please provide either a country, US state, US county or simply ask
-            for worldwide data
+          <Header as="h2" align="center">
+            {message}
           </Header>
         </Segment>
       );

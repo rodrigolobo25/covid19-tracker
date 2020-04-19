@@ -4,7 +4,9 @@ const uuid = require("uuid");
 var router = express.Router();
 const request = require("request");
 
-const sessionClient = new dialogflow.SessionsClient();
+const sessionClient = new dialogflow.SessionsClient({
+  keyFilename: process.cwd() + "../../covid19-fxfuyx-3a87cb72ad17.json",
+});
 const projectId = "covid19-fxfuyx";
 const sessionId = uuid.v4();
 const languageCode = "en";
@@ -20,11 +22,11 @@ router.get("/", async function (req, res, next) {
     cases: false,
     location: [],
   };
-  var query = req.query.message + "?";
+  var query = req.query.message;
   var temp = await executeQueries(query, languageCode);
 
   //populating the dialogresult
-  if (temp.fulfillmentText != "No") {
+  if (temp.intent.displayName == "getData") {
     dialogresult.intent = true;
   }
   if (dialogresult.intent) {
@@ -127,13 +129,18 @@ router.get("/", async function (req, res, next) {
   var search = true;
 
   if (!dialogresult.intent) {
-    res.send(["No"]);
+    res.send({ covidresult: ["No"], message: { value: temp.fulfillmentText } });
   } else {
-    var { covidresult, search } = await covidAPI(dialogresult);
+    var { covidresult, search, message } = await covidAPI(dialogresult);
     if (search.value) {
-      res.send(covidresult);
+      res.send({ covidresult, message });
     } else {
-      res.send(["No"]);
+      message.value =
+        "I am sorry! I didn't catch any specific location. Can you please provide either a country, US state, US county or simple ask for worldwide data.";
+      res.send({
+        covidresult: ["No"],
+        message,
+      });
     }
   }
 });
@@ -170,25 +177,64 @@ async function executeQueries(query, languageCode) {
   }
 }
 
-function getData(body, covidresult, dialogresult, index, search) {
+function getData(
+  body,
+  covidresult,
+  dialogresult,
+  index,
+  search,
+  message,
+  firstitem
+) {
   if (body.detail != null) {
     console.log("Covid API did not find request");
   } else {
+    if (firstitem.value) {
+      message.value += ` Also, in ${covidresult[index].location}`;
+    } else {
+      firstitem.message += `In ${covidresult[index].location}`;
+    }
     search.value = true;
     if (dialogresult.cases) {
       covidresult[index].data.push({ Confirmed: body.latest.confirmed });
+      if (firstitem.value) {
+        message.value += `, the total number of confirmed cases is ${body.latest.confirmed}`;
+      } else {
+        firstitem.message += `, the total number of confirmed cases is ${body.latest.confirmed}`;
+      }
     }
     if (dialogresult.recovery) {
       covidresult[index].data.push({ Recovered: body.latest.recovered });
+      if (firstitem.value) {
+        message.value += `, the total number of recovered cases is ${body.latest.recovered}`;
+      } else {
+        firstitem.message += `, the total number of recovered cases is ${body.latest.recovered}`;
+      }
     }
     if (dialogresult.death) {
       covidresult[index].data.push({ Deaths: body.latest.deaths });
+      if (firstitem.value) {
+        message.value += `, the total number of deaths is ${body.latest.deaths}`;
+      } else {
+        firstitem.message += `, the total number of deaths is ${body.latest.deaths}`;
+      }
     }
     if (!dialogresult.death && !dialogresult.cases && !dialogresult.recovery) {
       covidresult[index].data.push({ Confirmed: body.latest.confirmed });
       covidresult[index].data.push({ Recovered: body.latest.recovered });
       covidresult[index].data.push({ Deaths: body.latest.deaths });
+      if (firstitem.value) {
+        message.value += `, the total number of confirmed cases is ${body.latest.confirmed}, the total number of recovered cases is ${body.latest.recovered}, the total number of deaths is ${body.latest.deaths}`;
+      } else {
+        firstitem.message += `, the total number of confirmed cases is ${body.latest.confirmed}, the total number of recovered cases is ${body.latest.recovered}, the total number of deaths is ${body.latest.deaths}`;
+      }
     }
+    if (firstitem.value) {
+      message.value += `.`;
+    } else {
+      firstitem.message += `.`;
+    }
+    firstitem.value = true;
   }
 }
 
@@ -201,7 +247,9 @@ function makeRequest(
   dialogresult,
   index,
   resolve,
-  search
+  search,
+  message,
+  firstitem
 ) {
   if (nyt == "" && country == "" && county == "" && state == "") {
     request(
@@ -211,7 +259,15 @@ function makeRequest(
         if (err) {
           return console.log(err);
         } else {
-          getData(body, covidresult, dialogresult, index, search);
+          getData(
+            body,
+            covidresult,
+            dialogresult,
+            index,
+            search,
+            message,
+            firstitem
+          );
           resolve(body);
         }
       }
@@ -228,7 +284,15 @@ function makeRequest(
         if (err) {
           return console.log(err);
         } else {
-          getData(body, covidresult, dialogresult, index, search);
+          getData(
+            body,
+            covidresult,
+            dialogresult,
+            index,
+            search,
+            message,
+            firstitem
+          );
           resolve(body);
         }
       }
@@ -239,6 +303,8 @@ function makeRequest(
 async function covidAPI(dialogresult) {
   var search = { value: false };
   var promises = [];
+  var message = { value: "" };
+  var firstitem = { value: false, message: "" };
   if (dialogresult.world) {
     var covidresult = new Array(dialogresult.location.length + 1)
       .fill(null)
@@ -255,7 +321,9 @@ async function covidAPI(dialogresult) {
           dialogresult,
           dialogresult.location.length,
           resolve,
-          search
+          search,
+          message,
+          firstitem
         )
       )
     );
@@ -309,12 +377,15 @@ async function covidAPI(dialogresult) {
           dialogresult,
           index,
           resolve,
-          search
+          search,
+          message,
+          firstitem
         )
       )
     );
     index++;
   }
   const array = await Promise.all(promises);
-  return { covidresult, search };
+  message.value = firstitem.message + message.value;
+  return { covidresult, search, message };
 }

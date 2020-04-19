@@ -6,7 +6,6 @@ function Head() {
   return (
     <Header
       as="h1"
-      size="huge"
       block
       attached="top"
       align="center"
