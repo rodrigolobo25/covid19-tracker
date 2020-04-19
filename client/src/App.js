@@ -102,11 +102,13 @@ class App extends React.Component {
             if (data.length !== 0) {
               return (
                 <Segment key={i} aligned="center">
-                  <Header floated="left" icon as="h2">
-                    <Icon name="map marker alternate" />
-                    <Header.Content>{location}</Header.Content>
-                  </Header>
-                  <Statistic.Group widths="three">
+                  <Statistic.Group widths="four">
+                    <Statistic>
+                      <Header floated="left" icon as="h2">
+                        <Icon name="map marker alternate" />
+                        <Header.Content>{location}</Header.Content>
+                      </Header>
+                    </Statistic>
                     {data.map((value, x) => {
                       return (
                         <Statistic

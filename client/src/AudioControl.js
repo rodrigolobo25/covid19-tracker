@@ -8,7 +8,7 @@ export function AudioControl() {
       synthesis = window.speechSynthesis;
       voice = synthesis
         .getVoices()
-        .filter((voice) => langRegex.test(voice.lang))[0];
+        .filter((voice) => langRegex.test(voice.lang))[1];
     };
   }
   return state;
