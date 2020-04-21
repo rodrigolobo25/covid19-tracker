@@ -28,6 +28,7 @@ recognition.onresult = function (event) {
   }
 };
 recognition.onspeechend = function () {
+  recognition.abort();
   recognition.start();
 };
 
