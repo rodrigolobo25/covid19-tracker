@@ -338,6 +338,7 @@ async function covidAPI(dialogresult) {
   var nyt = "";
   var index = 0;
   for (var i = 0; i < dialogresult.location.length; i++) {
+    var skip = false;
     if (dialogresult.location[i].county != "") {
       if (dialogresult.location[i].state != "") {
         covidresult[i].location =
@@ -359,30 +360,37 @@ async function covidAPI(dialogresult) {
       covidresult[i].location = dialogresult.location[i].country;
       country = "&country=" + dialogresult.location[i].country;
     }
-    console.log(
-      "https://coronavirus-tracker-api.ruizlab.org/v2/locations?" +
-        nyt +
-        country +
-        county +
-        state
-    );
-    promises.push(
-      new Promise((resolve, reject) =>
-        makeRequest(
-          nyt,
-          country,
-          county,
-          state,
-          covidresult,
-          dialogresult,
-          index,
-          resolve,
-          search,
-          message,
-          firstitem
+    for (var x = i - 1; x >= 0; x--) {
+      if (covidresult[i].location == covidresult[x].location) {
+        skip = true;
+      }
+    }
+    if (!skip) {
+      console.log(
+        "https://coronavirus-tracker-api.ruizlab.org/v2/locations?" +
+          nyt +
+          country +
+          county +
+          state
+      );
+      promises.push(
+        new Promise((resolve, reject) =>
+          makeRequest(
+            nyt,
+            country,
+            county,
+            state,
+            covidresult,
+            dialogresult,
+            index,
+            resolve,
+            search,
+            message,
+            firstitem
+          )
         )
-      )
-    );
+      );
+    }
     index++;
   }
   const array = await Promise.all(promises);
