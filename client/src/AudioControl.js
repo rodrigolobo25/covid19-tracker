@@ -27,6 +27,9 @@ recognition.onresult = function (event) {
     state = event.results[last][0].transcript;
   }
 };
+recognition.onspeechend = function () {
+  recognition.start();
+};
 
 export function speakMessage(message) {
   const utterance = new SpeechSynthesisUtterance();
